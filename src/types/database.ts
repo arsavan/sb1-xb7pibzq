@@ -5,6 +5,7 @@ export interface Product {
   rating: number;
   reviews: number;
   image_url: string;
+  images: string[];
   amazon_url: string;
   description?: string;
   discount?: number;
@@ -17,6 +18,7 @@ export interface ProductFormData {
   name: string;
   price: number;
   image_url: string;
+  images: string[];
   amazon_url: string;
   description?: string;
   discount?: number;

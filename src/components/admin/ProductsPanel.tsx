@@ -12,6 +12,7 @@ export default function ProductsPanel() {
     name: '',
     price: 0,
     image_url: '',
+    images: [],
     amazon_url: '',
     description: '',
     tags: [],
@@ -21,6 +22,7 @@ export default function ProductsPanel() {
   const [error, setError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const multipleFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchProducts();
@@ -43,16 +45,14 @@ export default function ProductsPanel() {
     }
   }
 
-  async function handleImageUpload(file: File) {
+  async function handleImageUpload(file: File, isMainImage: boolean = true) {
     try {
       setUploadProgress(0);
       
-      // Generate a unique file name
       const fileExt = file.name.split('.').pop();
       const fileName = `${Math.random().toString(36).substring(2)}${Date.now()}.${fileExt}`;
       const filePath = `products/${fileName}`;
 
-      // Upload the file to Supabase Storage
       const { error: uploadError, data } = await supabase.storage
         .from('images')
         .upload(filePath, file, {
@@ -66,16 +66,21 @@ export default function ProductsPanel() {
 
       if (uploadError) throw uploadError;
 
-      // Get the public URL
       const { data: { publicUrl } } = supabase.storage
         .from('images')
         .getPublicUrl(filePath);
 
-      // Update form data with the new image URL
-      setFormData(prev => ({
-        ...prev,
-        image_url: publicUrl
-      }));
+      if (isMainImage) {
+        setFormData(prev => ({
+          ...prev,
+          image_url: publicUrl
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, publicUrl]
+        }));
+      }
 
       setUploadProgress(null);
     } catch (error) {
@@ -85,10 +90,16 @@ export default function ProductsPanel() {
     }
   }
 
+  async function handleMultipleImagesUpload(files: FileList) {
+    for (let i = 0; i < files.length; i++) {
+      await handleImageUpload(files[i], false);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError(null);
+    setLoading(true);
 
     try {
       if (editingProduct) {
@@ -116,6 +127,7 @@ export default function ProductsPanel() {
         name: '',
         price: 0,
         image_url: '',
+        images: [],
         amazon_url: '',
         description: '',
         tags: [],
@@ -137,6 +149,7 @@ export default function ProductsPanel() {
       name: product.name,
       price: product.price,
       image_url: product.image_url,
+      images: product.images || [],
       amazon_url: product.amazon_url,
       description: product.description || '',
       tags: product.tags,
@@ -144,19 +157,24 @@ export default function ProductsPanel() {
     });
   }
 
+  function handleRemoveImage(index: number) {
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  }
+
   async function handleDelete(id: string) {
     if (!confirm('Êtes-vous sûr de vouloir supprimer ce produit ?')) return;
 
     setLoading(true);
     try {
-      // Get the product to find its image URL
       const { data: product } = await supabase
         .from('products')
-        .select('image_url')
+        .select('image_url, images')
         .eq('id', id)
         .single();
 
-      // Delete the product
       const { error } = await supabase
         .from('products')
         .delete()
@@ -164,13 +182,31 @@ export default function ProductsPanel() {
 
       if (error) throw error;
 
-      // If the image is in our storage, delete it
-      if (product?.image_url && product.image_url.includes('supabase.co')) {
-        const path = product.image_url.split('/').pop();
-        if (path) {
+      if (product) {
+        const imagesToDelete: string[] = [];
+        
+        if (product.image_url?.includes('supabase.co')) {
+          const mainImagePath = product.image_url.split('/').pop();
+          if (mainImagePath) {
+            imagesToDelete.push('products/' + mainImagePath);
+          }
+        }
+
+        if (product.images) {
+          product.images.forEach(imageUrl => {
+            if (imageUrl.includes('supabase.co')) {
+              const path = imageUrl.split('/').pop();
+              if (path) {
+                imagesToDelete.push('products/' + path);
+              }
+            }
+          });
+        }
+
+        if (imagesToDelete.length > 0) {
           await supabase.storage
             .from('images')
-            .remove(['products/' + path]);
+            .remove(imagesToDelete);
         }
       }
 
@@ -213,7 +249,6 @@ export default function ProductsPanel() {
         </div>
       )}
 
-      {/* Form */}
       <div className="bg-card rounded-lg shadow p-6 mb-8">
         <h3 className="text-xl font-semibold mb-4">
           {editingProduct ? 'Modifier le produit' : 'Ajouter un produit'}
@@ -245,7 +280,7 @@ export default function ProductsPanel() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-secondary mb-1">Image</label>
+              <label className="block text-sm font-medium text-text-secondary mb-1">Image principale</label>
               <div className="flex items-start gap-4">
                 {formData.image_url && (
                   <div className="relative w-24 h-24 rounded-lg overflow-hidden bg-background">
@@ -271,7 +306,7 @@ export default function ProductsPanel() {
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) handleImageUpload(file);
+                      if (file) handleImageUpload(file, true);
                     }}
                   />
                   <button
@@ -288,13 +323,66 @@ export default function ProductsPanel() {
                     ) : (
                       <>
                         <Upload size={20} />
-                        Télécharger une image
+                        Télécharger l'image principale
                       </>
                     )}
                   </button>
-                  <p className="mt-1 text-xs text-text-secondary">
-                    Formats acceptés : JPG, PNG, GIF. Taille maximale : 2 MB
-                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-1">Images additionnelles</label>
+              <div className="space-y-4">
+                <div className="flex flex-wrap gap-4">
+                  {formData.images.map((image, index) => (
+                    <div key={index} className="relative w-24 h-24 rounded-lg overflow-hidden bg-background">
+                      <img
+                        src={image}
+                        alt={`Image ${index + 1}`}
+                        className="w-full h-full object-contain"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(index)}
+                        className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div>
+                  <input
+                    type="file"
+                    ref={multipleFileInputRef}
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      if (e.target.files?.length) {
+                        handleMultipleImagesUpload(e.target.files);
+                      }
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => multipleFileInputRef.current?.click()}
+                    disabled={uploadProgress !== null}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-border rounded-lg text-text-secondary hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+                  >
+                    {uploadProgress !== null ? (
+                      <>
+                        <Loader2 size={20} className="animate-spin" />
+                        {uploadProgress}%
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={20} />
+                        Ajouter des images
+                      </>
+                    )}
+                  </button>
                 </div>
               </div>
             </div>
@@ -370,6 +458,7 @@ export default function ProductsPanel() {
                     name: '',
                     price: 0,
                     image_url: '',
+                    images: [],
                     amazon_url: '',
                     description: '',
                     tags: [],
@@ -402,7 +491,6 @@ export default function ProductsPanel() {
         </form>
       </div>
 
-      {/* Products List */}
       <div className="bg-card rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-border">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Navigate, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { Heart, ShoppingBag } from 'lucide-react';
+import { Heart, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SimpleHeader } from '../components/SimpleHeader';
 import { supabase } from '../lib/supabase';
 import type { Product } from '../types/database';
@@ -21,13 +21,13 @@ export default function ProductDetail() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { userFavorites, toggleFavorite, fetchUserFavorites } = useFavorites();
   const { isAuthenticated } = useAuth();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
     if (id) fetchProduct();
   }, [id]);
 
   useEffect(() => {
-    // Redirect to SEO-friendly URL if needed
     if (product && (!slug || generateProductUrl(product.id, product.name) !== `/product/${id}/${slug}`)) {
       navigate(generateProductUrl(product.id, product.name), { replace: true });
     }
@@ -64,9 +64,22 @@ export default function ProductDetail() {
     }
   };
 
-  if (!id) return <Navigate to="/" />;
+  const handlePrevImage = () => {
+    if (!product) return;
+    const allImages = [product.image_url, ...(product.images || [])];
+    setCurrentImageIndex((prev) => 
+      prev === 0 ? allImages.length - 1 : prev - 1
+    );
+  };
 
-  // Format price for structured data
+  const handleNextImage = () => {
+    if (!product) return;
+    const allImages = [product.image_url, ...(product.images || [])];
+    setCurrentImageIndex((prev) => 
+      prev === allImages.length - 1 ? 0 : prev + 1
+    );
+  };
+
   const getStructuredData = () => {
     if (!product) return null;
 
@@ -75,7 +88,7 @@ export default function ProductDetail() {
       "@type": "Product",
       "name": product.name,
       "description": product.description,
-      "image": product.image_url,
+      "image": [product.image_url, ...(product.images || [])],
       "offers": {
         "@type": "Offer",
         "url": `${settings.site_url}${generateProductUrl(product.id, product.name)}`,
@@ -94,7 +107,6 @@ export default function ProductDetail() {
           <meta name="description" content={product.description || `Découvrez ${product.name} sur ${settings.site_title}`} />
           <meta name="keywords" content={`${product.tags.join(', ')}, bons plans, économies`} />
           
-          {/* Open Graph */}
           <meta property="og:title" content={`${product.name} - ${settings.site_title}`} />
           <meta property="og:description" content={product.description || `Découvrez ${product.name} sur ${settings.site_title}`} />
           <meta property="og:image" content={product.image_url} />
@@ -103,16 +115,13 @@ export default function ProductDetail() {
           <meta property="product:price:amount" content={product.price.toString()} />
           <meta property="product:price:currency" content="EUR" />
           
-          {/* Twitter */}
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content={`${product.name} - ${settings.site_title}`} />
           <meta name="twitter:description" content={product.description || `Découvrez ${product.name} sur ${settings.site_title}`} />
           <meta name="twitter:image" content={product.image_url} />
           
-          {/* Canonical URL */}
           <link rel="canonical" href={`${settings.site_url}${generateProductUrl(product.id, product.name)}`} />
 
-          {/* Structured Data */}
           <script type="application/ld+json">
             {JSON.stringify(getStructuredData())}
           </script>
@@ -132,15 +141,15 @@ export default function ProductDetail() {
 
       <main className="pt-16 px-4 md:px-8 max-w-7xl mx-auto">
         {loading ? (
-          <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+          <div className="flex items-center justify-center min-h-[400px]">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
           </div>
         ) : error ? (
-          <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+          <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-red-500">Une erreur est survenue</div>
           </div>
         ) : !product ? (
-          <div className="flex items-center justify-center h-[calc(100vh-4rem)]">
+          <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-text-secondary">Produit non trouvé</div>
           </div>
         ) : (
@@ -148,16 +157,71 @@ export default function ProductDetail() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Image Section */}
               <div className="relative bg-card rounded-2xl shadow-lg overflow-hidden">
-                <div className="flex items-center justify-center p-8">
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="max-w-full max-h-[500px] w-auto h-auto object-contain"
-                  />
+                <div className="relative">
+                  {/* Main Image */}
+                  <div className="aspect-square flex items-center justify-center p-8">
+                    <img
+                      src={[product.image_url, ...(product.images || [])][currentImageIndex]}
+                      alt={product.name}
+                      className="max-w-full max-h-full w-auto h-auto object-contain"
+                    />
+                  </div>
+
+                  {/* Navigation Arrows */}
+                  {(product.images?.length ?? 0) > 0 && (
+                    <>
+                      <button
+                        onClick={handlePrevImage}
+                        className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors"
+                      >
+                        <ChevronLeft size={24} />
+                      </button>
+                      <button
+                        onClick={handleNextImage}
+                        className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors"
+                      >
+                        <ChevronRight size={24} />
+                      </button>
+                    </>
+                  )}
+
+                  {product.discount && (
+                    <div className="absolute top-4 right-4 bg-secondary text-white px-3 py-1.5 rounded-full text-sm font-medium">
+                      -{product.discount}%
+                    </div>
+                  )}
                 </div>
-                {product.discount && (
-                  <div className="absolute top-4 right-4 bg-secondary text-white px-3 py-1.5 rounded-full text-sm font-medium">
-                    -{product.discount}%
+
+                {/* Thumbnails */}
+                {(product.images?.length ?? 0) > 0 && (
+                  <div className="flex gap-2 p-4 overflow-x-auto hide-scrollbar">
+                    <button
+                      onClick={() => setCurrentImageIndex(0)}
+                      className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+                        currentImageIndex === 0 ? 'border-primary' : 'border-transparent'
+                      }`}
+                    >
+                      <img
+                        src={product.image_url}
+                        alt={product.name}
+                        className="w-full h-full object-contain"
+                      />
+                    </button>
+                    {product.images.map((image, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentImageIndex(index + 1)}
+                        className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-colors ${
+                          currentImageIndex === index + 1 ? 'border-primary' : 'border-transparent'
+                        }`}
+                      >
+                        <img
+                          src={image}
+                          alt={`${product.name} - Image ${index + 1}`}
+                          className="w-full h-full object-contain"
+                        />
+                      </button>
+                    ))}
                   </div>
                 )}
               </div>
