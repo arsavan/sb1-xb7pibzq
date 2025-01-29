@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, ExternalLink } from 'lucide-react';
+import { Heart, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product } from '../types/database';
 import { generateProductUrl } from '../utils/seo';
 import { useAuth } from '../context/AuthContext';
@@ -19,6 +19,8 @@ export function ProductCard({
   onAuthRequired 
 }: ProductCardProps) {
   const { isAuthenticated } = useAuth();
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const allImages = [product.image_url, ...(product.images || [])];
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent event bubbling
@@ -29,16 +31,71 @@ export function ProductCard({
     onFavoriteClick(product.id);
   };
 
+  const handlePrevImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setCurrentImageIndex((prev) => 
+      prev === 0 ? allImages.length - 1 : prev - 1
+    );
+  };
+
+  const handleNextImage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setCurrentImageIndex((prev) => 
+      prev === allImages.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const handleDotClick = (index: number, e: React.MouseEvent) => {
+    e.preventDefault();
+    setCurrentImageIndex(index);
+  };
+
   return (
     <div className="bg-card rounded-xl overflow-hidden group card-hover animate-fadeIn h-full flex flex-col">
       {/* Image Container avec aspect ratio fixe */}
       <div className="relative aspect-[4/3] w-full">
         <img
-          src={product.image_url}
+          src={allImages[currentImageIndex]}
           alt={product.name}
           className="absolute inset-0 w-full h-full object-contain bg-gray-50"
           loading="lazy"
         />
+        
+        {/* Navigation arrows - Only show if there are multiple images */}
+        {allImages.length > 1 && (
+          <>
+            <button
+              onClick={handlePrevImage}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors opacity-0 group-hover:opacity-100"
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              onClick={handleNextImage}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors opacity-0 group-hover:opacity-100"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </>
+        )}
+
+        {/* Dots navigation */}
+        {allImages.length > 1 && (
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+            {allImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={(e) => handleDotClick(index, e)}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${
+                  currentImageIndex === index
+                    ? 'bg-primary w-3'
+                    : 'bg-white/80 hover:bg-white'
+                }`}
+              />
+            ))}
+          </div>
+        )}
+
         <Link
           to={generateProductUrl(product.id, product.name)}
           className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
