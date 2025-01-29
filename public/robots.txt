@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://craquetabudget.com/sitemap.xml
+Sitemap: https://craquetonbudget.fr/sitemap.xml
 
 # Prevent access to admin pages
 Disallow: /admin/
