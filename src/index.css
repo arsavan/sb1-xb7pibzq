@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --primary: #6366f1;
+  --primary-hover: #4f46e5;
+  --secondary: #ec4899;
+  --accent: #8b5cf6;
+  --background: #f8fafc;
+  --card: #ffffff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+}
+
+.dark {
+  --primary: #818cf8;
+  --primary-hover: #6366f1;
+  --secondary: #f472b6;
+  --accent: #a78bfa;
+  --background: #0f172a;
+  --card: #1e293b;
+  --text: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border: #334155;
+}
+
+body {
+  @apply bg-background text-text;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Custom range slider styles */
+input[type="range"] {
+  @apply h-2 rounded-lg appearance-none cursor-pointer bg-slate-200 dark:bg-slate-700;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  @apply appearance-none w-4 h-4 rounded-full bg-primary border-2 border-white dark:border-slate-800;
+}
+
+/* Custom animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.animate-slide-in {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Card hover effects */
+.card-hover {
+  @apply transition-all duration-300 hover:shadow-lg hover:scale-[1.02];
+}
+
+/* TipTap Editor Styles */
+.ProseMirror {
+  @apply min-h-[200px] focus:outline-none;
+}
+
+.ProseMirror > * + * {
+  @apply mt-4;
+}
+
+.ProseMirror h1 {
+  @apply text-2xl font-bold;
+}
+
+.ProseMirror h2 {
+  @apply text-xl font-bold;
+}
+
+.ProseMirror p {
+  @apply leading-7;
+}
+
+.ProseMirror ul {
+  @apply list-disc pl-6;
+}
+
+.ProseMirror ol {
+  @apply list-decimal pl-6;
+}
+
+.ProseMirror a {
+  @apply text-primary underline hover:text-primary-hover;
+}
+
+.ProseMirror strong {
+  @apply font-bold;
+}
+
+.ProseMirror em {
+  @apply italic;
+}

@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://craquetabudget.com/sitemap.xml
+
+# Prevent access to admin pages
+Disallow: /admin/
+Disallow: /admin/*
