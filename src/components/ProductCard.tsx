@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, TouchEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Heart, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product } from '../types/database';
@@ -21,6 +21,10 @@ export function ProductCard({
   const { isAuthenticated } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const allImages = [product.image_url, ...(product.images || [])];
+  
+  // Touch handling
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
 
   const handleFavoriteClick = (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent event bubbling
@@ -31,15 +35,15 @@ export function ProductCard({
     onFavoriteClick(product.id);
   };
 
-  const handlePrevImage = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handlePrevImage = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     setCurrentImageIndex((prev) => 
       prev === 0 ? allImages.length - 1 : prev - 1
     );
   };
 
-  const handleNextImage = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const handleNextImage = (e?: React.MouseEvent) => {
+    e?.preventDefault();
     setCurrentImageIndex((prev) => 
       prev === allImages.length - 1 ? 0 : prev + 1
     );
@@ -50,29 +54,63 @@ export function ProductCard({
     setCurrentImageIndex(index);
   };
 
+  const handleTouchStart = (e: TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+    touchEndX.current = null;
+  };
+
+  const handleTouchMove = (e: TouchEvent) => {
+    touchEndX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: TouchEvent) => {
+    if (!touchStartX.current || !touchEndX.current) return;
+
+    const swipeDistance = touchEndX.current - touchStartX.current;
+    const minSwipeDistance = 50; // Minimum distance for a swipe
+
+    if (Math.abs(swipeDistance) > minSwipeDistance) {
+      if (swipeDistance > 0) {
+        handlePrevImage();
+      } else {
+        handleNextImage();
+      }
+    }
+
+    // Reset touch coordinates
+    touchStartX.current = null;
+    touchEndX.current = null;
+  };
+
   return (
     <div className="bg-card rounded-xl overflow-hidden group card-hover animate-fadeIn h-full flex flex-col">
       {/* Image Container avec aspect ratio fixe */}
-      <div className="relative aspect-[4/3] w-full">
+      <div 
+        className="relative aspect-[4/3] w-full"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <img
           src={allImages[currentImageIndex]}
           alt={product.name}
           className="absolute inset-0 w-full h-full object-contain bg-gray-50"
           loading="lazy"
+          draggable={false}
         />
         
         {/* Navigation arrows - Only show if there are multiple images */}
         {allImages.length > 1 && (
           <>
             <button
-              onClick={handlePrevImage}
-              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors opacity-0 group-hover:opacity-100"
+              onClick={(e) => handlePrevImage(e)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors opacity-0 group-hover:opacity-100 md:block hidden"
             >
               <ChevronLeft size={16} />
             </button>
             <button
-              onClick={handleNextImage}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors opacity-0 group-hover:opacity-100"
+              onClick={(e) => handleNextImage(e)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/80 rounded-full shadow-lg hover:bg-white transition-colors opacity-0 group-hover:opacity-100 md:block hidden"
             >
               <ChevronRight size={16} />
             </button>
