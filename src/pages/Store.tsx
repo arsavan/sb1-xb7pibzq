@@ -5,6 +5,7 @@ import { useFavorites } from '../hooks/useFavorites';
 import { Header } from '../components/Header';
 import { Sidebar } from '../components/Sidebar';
 import { ProductCard } from '../components/ProductCard';
+import { AdSense } from '../components/AdSense';
 import AuthModal from '../components/AuthModal';
 import { Toast } from '../components/Toast';
 import { useTheme } from '../context/ThemeContext';
@@ -142,6 +143,15 @@ export default function Store() {
               {error}
             </div>
           )}
+
+          {/* Annonce en haut de la liste des produits */}
+          <div className="mb-6">
+            <AdSense
+              adSlot={import.meta.env.VITE_ADSENSE_SLOT_TOP}
+              className="w-full max-w-[728px] mx-auto"
+              style={{ minHeight: '90px' }}
+            />
+          </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {loading ? (
@@ -158,17 +168,39 @@ export default function Store() {
                 Aucun produit ne correspond aux critères de recherche
               </div>
             ) : (
-              filteredProducts.map(product => (
-                <ProductCard
-                  key={product.id}
-                  product={product}
-                  isFavorite={userFavorites.has(product.id)}
-                  onFavoriteClick={handleFavoriteClick}
-                  onAuthRequired={() => setShowAuthModal(true)}
-                />
+              filteredProducts.map((product, index) => (
+                <React.Fragment key={product.id}>
+                  <ProductCard
+                    product={product}
+                    isFavorite={userFavorites.has(product.id)}
+                    onFavoriteClick={handleFavoriteClick}
+                    onAuthRequired={() => setShowAuthModal(true)}
+                  />
+                  {/* Annonce tous les 8 produits */}
+                  {(index + 1) % 8 === 0 && (
+                    <div className="col-span-full my-6">
+                      <AdSense
+                        adSlot={import.meta.env.VITE_ADSENSE_SLOT_MIDDLE}
+                        className="w-full max-w-[728px] mx-auto"
+                        style={{ minHeight: '90px' }}
+                      />
+                    </div>
+                  )}
+                </React.Fragment>
               ))
             )}
           </div>
+
+          {/* Annonce en bas de la liste des produits */}
+          {filteredProducts.length > 0 && (
+            <div className="mt-6">
+              <AdSense
+                adSlot={import.meta.env.VITE_ADSENSE_SLOT_BOTTOM}
+                className="w-full max-w-[728px] mx-auto"
+                style={{ minHeight: '90px' }}
+              />
+            </div>
+          )}
         </main>
       </div>
     </div>
