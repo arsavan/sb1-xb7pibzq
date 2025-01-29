@@ -10,6 +10,8 @@ import { useFavorites } from '../hooks/useFavorites';
 import { generateProductUrl } from '../utils/seo';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import NotFound from './NotFound';
+import { AdSense } from '../components/AdSense';
 
 export default function ProductDetail() {
   const { settings } = useTheme();
@@ -22,12 +24,10 @@ export default function ProductDetail() {
   const { userFavorites, toggleFavorite, fetchUserFavorites } = useFavorites();
   const { isAuthenticated } = useAuth();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      fetchProduct();
-      logProductView();
-    }
+    if (id) fetchProduct();
   }, [id]);
 
   useEffect(() => {
@@ -44,25 +44,34 @@ export default function ProductDetail() {
         .eq('id', id)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST116') {
+          setNotFound(true);
+        }
+        throw error;
+      }
       setProduct(data);
     } catch (error: any) {
+      console.error('Error fetching product:', error);
       setError(error.message);
     } finally {
       setLoading(false);
     }
   }
 
-  async function logProductView() {
-    try {
-      await supabase.from('product_analytics').insert([{
-        product_id: id,
-        view_count: 1
-      }]);
-    } catch (error) {
-      console.error('Error logging product view:', error);
+  const handleFavoriteClick = async () => {
+    if (!product) return;
+    
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
+      return;
     }
-  }
+    
+    const success = await toggleFavorite(product.id);
+    if (success) {
+      fetchProduct();
+    }
+  };
 
   const handleBuyClick = async () => {
     if (!product) return;
@@ -76,20 +85,6 @@ export default function ProductDetail() {
     } catch (error) {
       console.error('Error logging buy click:', error);
       window.open(product.amazon_url, '_blank');
-    }
-  };
-
-  const handleFavoriteClick = async () => {
-    if (!product) return;
-    
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-      return;
-    }
-    
-    const success = await toggleFavorite(product.id);
-    if (success) {
-      fetchProduct();
     }
   };
 
@@ -127,6 +122,11 @@ export default function ProductDetail() {
       }
     };
   };
+
+  // Si le produit n'est pas trouvé, afficher la page 404
+  if (notFound) {
+    return <NotFound />;
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -169,6 +169,15 @@ export default function ProductDetail() {
       <SimpleHeader onAuthClick={() => setShowAuthModal(true)} />
 
       <main className="pt-16 px-4 md:px-8 max-w-7xl mx-auto">
+        {/* Annonce en haut */}
+        <div className="mb-8">
+          <AdSense
+            adSlot={import.meta.env.VITE_ADSENSE_SLOT_TOP}
+            className="w-full max-w-[728px] mx-auto"
+            style={{ minHeight: '90px' }}
+          />
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary border-t-transparent" />
@@ -321,6 +330,15 @@ export default function ProductDetail() {
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Annonce en bas */}
+            <div className="mt-8">
+              <AdSense
+                adSlot={import.meta.env.VITE_ADSENSE_SLOT_BOTTOM}
+                className="w-full max-w-[728px] mx-auto"
+                style={{ minHeight: '90px' }}
+              />
             </div>
           </div>
         )}

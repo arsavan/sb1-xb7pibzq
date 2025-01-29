@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Store from './pages/Store';
 import ProductDetail from './pages/ProductDetail';
@@ -6,6 +6,7 @@ import AdminLogin from './pages/AdminLogin';
 import Admin from './pages/Admin';
 import Favorites from './pages/Favorites';
 import Dashboard from './pages/Dashboard';
+import NotFound from './pages/NotFound';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -56,6 +57,8 @@ function App() {
               </ProtectedRoute>
             }
           />
+          {/* Catch all route for 404 */}
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </AuthProvider>
     </ThemeProvider>
