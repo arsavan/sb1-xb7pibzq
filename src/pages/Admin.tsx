@@ -1,16 +1,18 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, Tags, Palette, Settings, LogOut } from 'lucide-react';
+import { LayoutGrid, Tags, Palette, Settings, BarChart3, LogOut } from 'lucide-react';
 import ProductsPanel from '../components/admin/ProductsPanel';
 import TagsPanel from '../components/admin/TagsPanel';
 import ThemePanel from '../components/admin/ThemePanel';
 import SettingsPanel from '../components/admin/SettingsPanel';
+import AnalyticsPanel from '../components/admin/AnalyticsPanel';
 import { useAuth } from '../context/AuthContext';
 
-type Panel = 'products' | 'tags' | 'theme' | 'settings';
+type Panel = 'products' | 'tags' | 'theme' | 'settings' | 'analytics';
 
 const MENU_ITEMS = [
   { id: 'products' as Panel, label: 'Produits', icon: LayoutGrid },
+  { id: 'analytics' as Panel, label: 'Analytics', icon: BarChart3 },
   { id: 'tags' as Panel, label: 'Tags', icon: Tags },
   { id: 'theme' as Panel, label: 'Thème', icon: Palette },
   { id: 'settings' as Panel, label: 'Paramètres', icon: Settings },
@@ -61,6 +63,7 @@ export default function Admin() {
       {/* Main Content */}
       <main className="flex-1 p-8">
         {activePanel === 'products' && <ProductsPanel />}
+        {activePanel === 'analytics' && <AnalyticsPanel />}
         {activePanel === 'tags' && <TagsPanel />}
         {activePanel === 'theme' && <ThemePanel />}
         {activePanel === 'settings' && <SettingsPanel />}

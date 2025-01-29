@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Navigate, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Heart, ShoppingBag, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SimpleHeader } from '../components/SimpleHeader';
@@ -24,7 +24,10 @@ export default function ProductDetail() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   useEffect(() => {
-    if (id) fetchProduct();
+    if (id) {
+      fetchProduct();
+      logProductView();
+    }
   }, [id]);
 
   useEffect(() => {
@@ -49,6 +52,32 @@ export default function ProductDetail() {
       setLoading(false);
     }
   }
+
+  async function logProductView() {
+    try {
+      await supabase.from('product_analytics').insert([{
+        product_id: id,
+        view_count: 1
+      }]);
+    } catch (error) {
+      console.error('Error logging product view:', error);
+    }
+  }
+
+  const handleBuyClick = async () => {
+    if (!product) return;
+    
+    try {
+      await supabase.from('product_analytics').insert([{
+        product_id: product.id,
+        buy_click_count: 1
+      }]);
+      window.open(product.amazon_url, '_blank');
+    } catch (error) {
+      console.error('Error logging buy click:', error);
+      window.open(product.amazon_url, '_blank');
+    }
+  };
 
   const handleFavoriteClick = async () => {
     if (!product) return;
@@ -244,18 +273,16 @@ export default function ProductDetail() {
                       )}
                     </div>
 
-                    <a
-                      href={product.amazon_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
+                    <button
+                      onClick={handleBuyClick}
                       className="inline-flex items-center justify-center w-full px-8 py-3 bg-accent hover:bg-accent/90 text-white rounded-full text-lg font-medium transition-colors"
                     >
                       <ShoppingBag size={20} className="mr-2" />
                       Acheter sur Amazon
-                    </a>
+                    </button>
                   </div>
 
-                  {/* Favorites and Tags - Now in the same row */}
+                  {/* Favorites and Tags */}
                   <div className="flex flex-wrap items-center gap-4 mb-6">
                     <button
                       onClick={handleFavoriteClick}
@@ -277,7 +304,6 @@ export default function ProductDetail() {
                       </span>
                     </button>
 
-                    {/* Tags now in the same row with updated styling */}
                     {product.tags.map(tag => (
                       <span
                         key={tag}

@@ -4,6 +4,7 @@ import { Heart, ExternalLink, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { Product } from '../types/database';
 import { generateProductUrl } from '../utils/seo';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
 
 interface ProductCardProps {
   product: Product;
@@ -33,6 +34,20 @@ export function ProductCard({
       return;
     }
     onFavoriteClick(product.id);
+  };
+
+  const handleBuyClick = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await supabase.from('product_analytics').insert([{
+        product_id: product.id,
+        homepage_buy_click_count: 1
+      }]);
+      window.open(product.amazon_url, '_blank');
+    } catch (error) {
+      console.error('Error logging buy click:', error);
+      window.open(product.amazon_url, '_blank');
+    }
   };
 
   const handlePrevImage = (e?: React.MouseEvent) => {
@@ -137,6 +152,16 @@ export function ProductCard({
         <Link
           to={generateProductUrl(product.id, product.name)}
           className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={async () => {
+            try {
+              await supabase.from('product_analytics').insert([{
+                product_id: product.id,
+                view_count: 1
+              }]);
+            } catch (error) {
+              console.error('Error logging view:', error);
+            }
+          }}
         >
           <button className="px-4 py-2 bg-primary text-white rounded-full flex items-center gap-2 hover:bg-primary-hover transition-colors">
             <ExternalLink size={16} />
@@ -197,14 +222,12 @@ export function ProductCard({
           <div className="flex items-center gap-2">
             <span className="text-lg font-bold text-primary">{product.price}€</span>
           </div>
-          <a
-            href={product.amazon_url}
-            target="_blank"
-            rel="noopener noreferrer"
+          <button
+            onClick={handleBuyClick}
             className="px-4 py-1.5 bg-accent text-white rounded-full text-sm hover:bg-accent/90 transition-colors"
           >
             Acheter
-          </a>
+          </button>
         </div>
       </div>
     </div>
