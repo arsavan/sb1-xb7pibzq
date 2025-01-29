@@ -230,7 +230,33 @@ export default function ProductDetail() {
               <div className="space-y-6">
                 <div>
                   <h1 className="text-3xl font-bold mb-4">{product.name}</h1>
-                  <div className="flex items-center gap-4 mb-6">
+                  
+                  {/* Price and Purchase Section */}
+                  <div className="bg-card rounded-lg p-6 mb-6 border border-border">
+                    <div className="flex items-end gap-4 mb-4">
+                      <div className="text-4xl font-bold text-primary">
+                        {product.price}€
+                      </div>
+                      {product.discount && (
+                        <div className="text-lg text-text-secondary line-through">
+                          {(product.price / (1 - product.discount / 100)).toFixed(2)}€
+                        </div>
+                      )}
+                    </div>
+
+                    <a
+                      href={product.amazon_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center w-full px-8 py-3 bg-accent hover:bg-accent/90 text-white rounded-full text-lg font-medium transition-colors"
+                    >
+                      <ShoppingBag size={20} className="mr-2" />
+                      Acheter sur Amazon
+                    </a>
+                  </div>
+
+                  {/* Favorites and Tags - Now in the same row */}
+                  <div className="flex flex-wrap items-center gap-4 mb-6">
                     <button
                       onClick={handleFavoriteClick}
                       className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${
@@ -250,45 +276,23 @@ export default function ProductDetail() {
                         ({product.favorites_count || 0})
                       </span>
                     </button>
+
+                    {/* Tags now in the same row with updated styling */}
+                    {product.tags.map(tag => (
+                      <span
+                        key={tag}
+                        className="px-3 py-2 bg-card border border-border rounded-full text-sm text-text-secondary shadow-sm"
+                      >
+                        {tag}
+                      </span>
+                    ))}
                   </div>
+
+                  {/* Description */}
                   <div 
-                    className="prose max-w-none text-text-secondary"
+                    className="prose max-w-none text-text-secondary bg-card rounded-lg p-6 border border-border"
                     dangerouslySetInnerHTML={{ __html: product.description || 'Aucune description disponible' }}
                   />
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  {product.tags.map(tag => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1 bg-background rounded-full text-sm text-text-secondary"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-
-                <div className="border-t border-border pt-6">
-                  <div className="flex items-end gap-4 mb-6">
-                    <div className="text-4xl font-bold text-primary">
-                      {product.price}€
-                    </div>
-                    {product.discount && (
-                      <div className="text-lg text-text-secondary line-through">
-                        {(product.price / (1 - product.discount / 100)).toFixed(2)}€
-                      </div>
-                    )}
-                  </div>
-
-                  <a
-                    href={product.amazon_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center justify-center w-full md:w-auto px-8 py-3 bg-accent hover:bg-accent/90 text-white rounded-full text-lg font-medium transition-colors"
-                  >
-                    <ShoppingBag size={20} className="mr-2" />
-                    Acheter sur Amazon
-                  </a>
                 </div>
               </div>
             </div>

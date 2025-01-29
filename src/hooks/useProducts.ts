@@ -55,19 +55,60 @@ export function useProducts() {
     const minPrice = Math.floor(Math.min(...prices));
     const maxPrice = Math.ceil(Math.max(...prices));
 
-    // Calculate price ranges with dynamic steps
-    const range = maxPrice - minPrice;
-    let step: number;
+    // Fonction pour vérifier si un intervalle contient des produits
+    const hasProductsInRange = (min: number, max: number) => {
+      return filteredProducts.some(p => p.price >= min && p.price <= max);
+    };
 
-    if (range <= 50) step = 10;
-    else if (range <= 100) step = 20;
-    else if (range <= 500) step = 50;
-    else if (range <= 1000) step = 100;
-    else step = 250;
-
+    // Calcul des paliers en fonction de la plage de prix
     const ranges: [number, number][] = [];
-    for (let i = minPrice; i < maxPrice; i += step) {
-      ranges.push([i, Math.min(i + step, maxPrice)]);
+    const range = maxPrice - minPrice;
+
+    if (range <= 20) {
+      // Pour les petits prix, paliers de 5€
+      for (let i = minPrice; i < maxPrice; i += 5) {
+        const rangeMin = i;
+        const rangeMax = Math.min(i + 5, maxPrice);
+        if (hasProductsInRange(rangeMin, rangeMax)) {
+          ranges.push([rangeMin, rangeMax]);
+        }
+      }
+    } else if (range <= 50) {
+      // Paliers de 10€
+      for (let i = minPrice; i < maxPrice; i += 10) {
+        const rangeMin = i;
+        const rangeMax = Math.min(i + 10, maxPrice);
+        if (hasProductsInRange(rangeMin, rangeMax)) {
+          ranges.push([rangeMin, rangeMax]);
+        }
+      }
+    } else if (range <= 100) {
+      // Paliers de 25€
+      for (let i = minPrice; i < maxPrice; i += 25) {
+        const rangeMin = i;
+        const rangeMax = Math.min(i + 25, maxPrice);
+        if (hasProductsInRange(rangeMin, rangeMax)) {
+          ranges.push([rangeMin, rangeMax]);
+        }
+      }
+    } else if (range <= 500) {
+      // Paliers de 50€
+      for (let i = minPrice; i < maxPrice; i += 50) {
+        const rangeMin = i;
+        const rangeMax = Math.min(i + 50, maxPrice);
+        if (hasProductsInRange(rangeMin, rangeMax)) {
+          ranges.push([rangeMin, rangeMax]);
+        }
+      }
+    } else {
+      // Pour les grands écarts de prix, paliers de 100€
+      for (let i = minPrice; i < maxPrice; i += 100) {
+        const rangeMin = i;
+        const rangeMax = Math.min(i + 100, maxPrice);
+        if (hasProductsInRange(rangeMin, rangeMax)) {
+          ranges.push([rangeMin, rangeMax]);
+        }
+      }
     }
 
     return ranges;
