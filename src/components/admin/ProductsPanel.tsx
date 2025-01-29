@@ -3,6 +3,7 @@ import { supabase } from '../../lib/supabase';
 import type { Product, ProductFormData } from '../../types/database';
 import { Trash2, Plus, Save, X, Edit2, Upload, Loader2 } from 'lucide-react';
 import { RichTextEditor } from './RichTextEditor';
+import AmazonSearch from './AmazonSearch';
 
 export default function ProductsPanel() {
   const [products, setProducts] = useState<Product[]>([]);
@@ -239,6 +240,19 @@ export default function ProductsPanel() {
     }));
   }
 
+  const handleAmazonProductSelect = (amazonProduct: any) => {
+    setFormData({
+      name: amazonProduct.title,
+      price: amazonProduct.price,
+      image_url: amazonProduct.imageUrl,
+      images: [],
+      amazon_url: amazonProduct.link,
+      description: amazonProduct.description,
+      tags: [],
+      discount: undefined
+    });
+  };
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">Gestion des Produits</h2>
@@ -248,6 +262,8 @@ export default function ProductsPanel() {
           {error}
         </div>
       )}
+
+      <AmazonSearch onProductSelect={handleAmazonProductSelect} />
 
       <div className="bg-card rounded-lg shadow p-6 mb-8">
         <h3 className="text-xl font-semibold mb-4">
