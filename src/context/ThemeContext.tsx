@@ -8,6 +8,7 @@ interface ThemeSettings {
   secondary_color: string;
   accent_color: string;
   site_url: string;
+  favicon_url: string;
 }
 
 interface ThemeContextType {
@@ -21,7 +22,8 @@ const defaultSettings: ThemeSettings = {
   primary_hover_color: '#4f46e5',
   secondary_color: '#ec4899',
   accent_color: '#8b5cf6',
-  site_url: 'https://craquetabudget.com'
+  site_url: 'https://craquetabudget.com',
+  favicon_url: 'https://raw.githubusercontent.com/supabase/supabase/master/packages/common/assets/images/supabase-logo.svg'
 };
 
 export const ThemeContext = createContext<ThemeContextType>({
@@ -81,6 +83,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
       if (data) {
         setSettings(data);
+        // Update favicon
+        const faviconLink = document.querySelector("link[rel*='icon']") as HTMLLinkElement;
+        if (faviconLink) {
+          faviconLink.href = data.favicon_url || defaultSettings.favicon_url;
+        }
       }
     } catch (error) {
       console.error('Error fetching theme settings:', error);

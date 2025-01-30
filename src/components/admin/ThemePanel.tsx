@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Save, RotateCcw } from 'lucide-react';
+import { Save, RotateCcw, Upload, Loader2 } from 'lucide-react';
 
 interface ThemeSettings {
   id?: string;
@@ -9,6 +9,7 @@ interface ThemeSettings {
   primary_hover_color: string;
   secondary_color: string;
   accent_color: string;
+  favicon_url: string;
   is_active?: boolean;
 }
 
@@ -17,7 +18,8 @@ const defaultSettings: ThemeSettings = {
   primary_color: '#6366f1',
   primary_hover_color: '#4f46e5',
   secondary_color: '#ec4899',
-  accent_color: '#8b5cf6'
+  accent_color: '#8b5cf6',
+  favicon_url: 'https://raw.githubusercontent.com/supabase/supabase/master/packages/common/assets/images/supabase-logo.svg'
 };
 
 export default function ThemePanel() {
@@ -25,6 +27,8 @@ export default function ThemePanel() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -68,6 +72,44 @@ export default function ThemePanel() {
     }
   }
 
+  async function handleFaviconUpload(file: File) {
+    try {
+      setUploadProgress(0);
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `favicon-${Math.random().toString(36).substring(2)}${Date.now()}.${fileExt}`;
+      const filePath = `public/${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('public')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false,
+          onUploadProgress: (progress) => {
+            const percent = (progress.loaded / progress.total) * 100;
+            setUploadProgress(Math.round(percent));
+          },
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('public')
+        .getPublicUrl(filePath);
+
+      setSettings(prev => ({
+        ...prev,
+        favicon_url: publicUrl
+      }));
+
+      setUploadProgress(null);
+    } catch (error) {
+      console.error('Error uploading favicon:', error);
+      setError('Erreur lors du téléchargement du favicon');
+      setUploadProgress(null);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -84,7 +126,8 @@ export default function ThemePanel() {
             primary_color: settings.primary_color,
             primary_hover_color: settings.primary_hover_color,
             secondary_color: settings.secondary_color,
-            accent_color: settings.accent_color
+            accent_color: settings.accent_color,
+            favicon_url: settings.favicon_url
           })
           .eq('id', settings.id);
 
@@ -127,7 +170,8 @@ export default function ThemePanel() {
             primary_color: defaultSettings.primary_color,
             primary_hover_color: defaultSettings.primary_hover_color,
             secondary_color: defaultSettings.secondary_color,
-            accent_color: defaultSettings.accent_color
+            accent_color: defaultSettings.accent_color,
+            favicon_url: defaultSettings.favicon_url
           })
           .eq('id', settings.id);
 
@@ -191,6 +235,56 @@ export default function ThemePanel() {
                 onChange={e => setSettings(prev => ({ ...prev, site_title: e.target.value }))}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Favicon
+              </label>
+              <div className="flex items-start gap-4">
+                {settings.favicon_url && (
+                  <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-background">
+                    <img
+                      src={settings.favicon_url}
+                      alt="Favicon"
+                      className="w-full h-full object-contain"
+                    />
+                  </div>
+                )}
+                <div className="flex-1">
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="image/x-icon,image/png,image/svg+xml"
+                    className="hidden"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleFaviconUpload(file);
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={uploadProgress !== null}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-border rounded-lg text-text-secondary hover:border-primary hover:text-primary transition-colors disabled:opacity-50"
+                  >
+                    {uploadProgress !== null ? (
+                      <>
+                        <Loader2 size={20} className="animate-spin" />
+                        {uploadProgress}%
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={20} />
+                        Télécharger un favicon
+                      </>
+                    )}
+                  </button>
+                  <p className="mt-1 text-sm text-text-secondary">
+                    Formats acceptés : ICO, PNG, SVG
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div>
