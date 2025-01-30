@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, ShoppingCart, Search, User } from 'lucide-react';
+import { Menu, ShoppingCart, ShoppingBag, Store, Package, Gift, Tag, Percent, CreditCard, Wallet, DollarSign, Euro, Banknote, Search, User, DivideIcon as LucideIcon } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -14,6 +14,21 @@ interface HeaderProps {
   selectedTags: string[];
   setSelectedTags: (tags: string[]) => void;
 }
+
+const HEADER_ICONS: Record<string, LucideIcon> = {
+  ShoppingCart,
+  ShoppingBag,
+  Store,
+  Package,
+  Gift,
+  Tag,
+  Percent,
+  CreditCard,
+  Wallet,
+  DollarSign,
+  Euro,
+  Banknote
+};
 
 export function Header({
   isMenuOpen,
@@ -59,6 +74,9 @@ export function Header({
     return () => document.removeEventListener('click', handleClickOutside);
   }, []);
 
+  // Get the correct icon component based on settings
+  const HeaderIcon = settings.header_icon ? HEADER_ICONS[settings.header_icon] : ShoppingCart;
+
   return (
     <header className="fixed top-0 left-0 right-0 bg-card z-50 flex flex-col px-4 border-b border-border shadow-sm">
       <div className="h-16 flex items-center justify-between">
@@ -70,7 +88,7 @@ export function Header({
             <Menu size={24} className="text-text" />
           </button>
           <Link to="/" onClick={handleTitleClick} className="flex items-center gap-2">
-            <ShoppingCart size={24} className="text-primary" />
+            <HeaderIcon size={24} className="text-primary" />
             <span 
               className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
               style={{ opacity: settings ? 1 : 0 }}

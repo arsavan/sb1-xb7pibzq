@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
-import { Save, RotateCcw, Upload, Loader2 } from 'lucide-react';
+import { Save, RotateCcw, Upload, Loader2, ShoppingCart, ShoppingBag, Store, Package, Gift, Tag, Percent, CreditCard, Wallet, DollarSign, Euro, Banknote, DivideIcon as LucideIcon } from 'lucide-react';
 
 interface ThemeSettings {
   id?: string;
@@ -9,8 +9,13 @@ interface ThemeSettings {
   primary_hover_color: string;
   secondary_color: string;
   accent_color: string;
+  background_color: string;
+  card_color: string;
+  text_color: string;
+  text_secondary_color: string;
+  border_color: string;
   favicon_url: string;
-  is_active?: boolean;
+  header_icon?: string;
 }
 
 const defaultSettings: ThemeSettings = {
@@ -19,8 +24,34 @@ const defaultSettings: ThemeSettings = {
   primary_hover_color: '#4f46e5',
   secondary_color: '#ec4899',
   accent_color: '#8b5cf6',
-  favicon_url: 'https://raw.githubusercontent.com/supabase/supabase/master/packages/common/assets/images/supabase-logo.svg'
+  background_color: '#f8fafc',
+  card_color: '#ffffff',
+  text_color: '#0f172a',
+  text_secondary_color: '#64748b',
+  border_color: '#e2e8f0',
+  favicon_url: 'https://raw.githubusercontent.com/supabase/supabase/master/packages/common/assets/images/supabase-logo.svg',
+  header_icon: 'ShoppingCart'
 };
+
+interface IconOption {
+  name: string;
+  icon: LucideIcon;
+}
+
+const AVAILABLE_ICONS: IconOption[] = [
+  { name: 'ShoppingCart', icon: ShoppingCart },
+  { name: 'ShoppingBag', icon: ShoppingBag },
+  { name: 'Store', icon: Store },
+  { name: 'Package', icon: Package },
+  { name: 'Gift', icon: Gift },
+  { name: 'Tag', icon: Tag },
+  { name: 'Percent', icon: Percent },
+  { name: 'CreditCard', icon: CreditCard },
+  { name: 'Wallet', icon: Wallet },
+  { name: 'DollarSign', icon: DollarSign },
+  { name: 'Euro', icon: Euro },
+  { name: 'Banknote', icon: Banknote }
+];
 
 export default function ThemePanel() {
   const [settings, setSettings] = useState<ThemeSettings>(defaultSettings);
@@ -34,36 +65,18 @@ export default function ThemePanel() {
     fetchSettings();
   }, []);
 
-  useEffect(() => {
-    // Apply theme changes in real-time
-    document.documentElement.style.setProperty('--primary', settings.primary_color);
-    document.documentElement.style.setProperty('--primary-hover', settings.primary_hover_color);
-    document.documentElement.style.setProperty('--secondary', settings.secondary_color);
-    document.documentElement.style.setProperty('--accent', settings.accent_color);
-  }, [settings]);
-
   async function fetchSettings() {
     try {
       const { data, error } = await supabase
         .from('theme_settings')
         .select('*')
         .eq('is_active', true)
-        .maybeSingle();
+        .single();
 
       if (error) throw error;
 
       if (data) {
         setSettings(data);
-      } else {
-        // If no active theme exists, create one with default settings
-        const { data: newData, error: insertError } = await supabase
-          .from('theme_settings')
-          .insert([{ ...defaultSettings, is_active: true }])
-          .select()
-          .single();
-
-        if (insertError) throw insertError;
-        if (newData) setSettings(newData);
       }
     } catch (error) {
       console.error('Error fetching theme settings:', error);
@@ -118,7 +131,6 @@ export default function ThemePanel() {
 
     try {
       if (settings.id) {
-        // Update existing theme
         const { error } = await supabase
           .from('theme_settings')
           .update({
@@ -127,16 +139,15 @@ export default function ThemePanel() {
             primary_hover_color: settings.primary_hover_color,
             secondary_color: settings.secondary_color,
             accent_color: settings.accent_color,
-            favicon_url: settings.favicon_url
+            background_color: settings.background_color,
+            card_color: settings.card_color,
+            text_color: settings.text_color,
+            text_secondary_color: settings.text_secondary_color,
+            border_color: settings.border_color,
+            favicon_url: settings.favicon_url,
+            header_icon: settings.header_icon
           })
           .eq('id', settings.id);
-
-        if (error) throw error;
-      } else {
-        // Should never happen due to fetchSettings logic, but handle it just in case
-        const { error } = await supabase
-          .from('theme_settings')
-          .insert([{ ...settings, is_active: true }]);
 
         if (error) throw error;
       }
@@ -162,7 +173,6 @@ export default function ThemePanel() {
 
     try {
       if (settings.id) {
-        // Update existing theme with default values
         const { error } = await supabase
           .from('theme_settings')
           .update({
@@ -171,16 +181,15 @@ export default function ThemePanel() {
             primary_hover_color: defaultSettings.primary_hover_color,
             secondary_color: defaultSettings.secondary_color,
             accent_color: defaultSettings.accent_color,
-            favicon_url: defaultSettings.favicon_url
+            background_color: defaultSettings.background_color,
+            card_color: defaultSettings.card_color,
+            text_color: defaultSettings.text_color,
+            text_secondary_color: defaultSettings.text_secondary_color,
+            border_color: defaultSettings.border_color,
+            favicon_url: defaultSettings.favicon_url,
+            header_icon: defaultSettings.header_icon
           })
           .eq('id', settings.id);
-
-        if (error) throw error;
-      } else {
-        // Should never happen due to fetchSettings logic, but handle it just in case
-        const { error } = await supabase
-          .from('theme_settings')
-          .insert([{ ...defaultSettings, is_active: true }]);
 
         if (error) throw error;
       }
@@ -222,7 +231,6 @@ export default function ThemePanel() {
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Form */}
         <div className="bg-card rounded-lg shadow p-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
@@ -235,6 +243,31 @@ export default function ThemePanel() {
                 onChange={e => setSettings(prev => ({ ...prev, site_title: e.target.value }))}
                 className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Icône de l'en-tête
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {AVAILABLE_ICONS.map(({ name, icon: Icon }) => (
+                  <button
+                    key={name}
+                    type="button"
+                    onClick={() => setSettings(prev => ({ ...prev, header_icon: name }))}
+                    className={`p-4 rounded-lg border-2 transition-colors ${
+                      settings.header_icon === name
+                        ? 'border-primary bg-primary/10'
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                  >
+                    <Icon 
+                      size={24} 
+                      className={settings.header_icon === name ? 'text-primary' : 'text-text-secondary'} 
+                    />
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div>
@@ -367,6 +400,106 @@ export default function ThemePanel() {
               </div>
             </div>
 
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Couleur de fond
+              </label>
+              <div className="flex gap-4">
+                <input
+                  type="color"
+                  value={settings.background_color}
+                  onChange={e => setSettings(prev => ({ ...prev, background_color: e.target.value }))}
+                  className="h-10 w-20"
+                />
+                <input
+                  type="text"
+                  value={settings.background_color}
+                  onChange={e => setSettings(prev => ({ ...prev, background_color: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Couleur des cartes
+              </label>
+              <div className="flex gap-4">
+                <input
+                  type="color"
+                  value={settings.card_color}
+                  onChange={e => setSettings(prev => ({ ...prev, card_color: e.target.value }))}
+                  className="h-10 w-20"
+                />
+                <input
+                  type="text"
+                  value={settings.card_color}
+                  onChange={e => setSettings(prev => ({ ...prev, card_color: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Couleur du texte
+              </label>
+              <div className="flex gap-4">
+                <input
+                  type="color"
+                  value={settings.text_color}
+                  onChange={e => setSettings(prev => ({ ...prev, text_color: e.target.value }))}
+                  className="h-10 w-20"
+                />
+                <input
+                  type="text"
+                  value={settings.text_color}
+                  onChange={e => setSettings(prev => ({ ...prev, text_color: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Couleur du texte secondaire
+              </label>
+              <div className="flex gap-4">
+                <input
+                  type="color"
+                  value={settings.text_secondary_color}
+                  onChange={e => setSettings(prev => ({ ...prev, text_secondary_color: e.target.value }))}
+                  className="h-10 w-20"
+                />
+                <input
+                  type="text"
+                  value={settings.text_secondary_color}
+                  onChange={e => setSettings(prev => ({ ...prev, text_secondary_color: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-secondary mb-2">
+                Couleur des bordures
+              </label>
+              <div className="flex gap-4">
+                <input
+                  type="color"
+                  value={settings.border_color}
+                  onChange={e => setSettings(prev => ({ ...prev, border_color: e.target.value }))}
+                  className="h-10 w-20"
+                />
+                <input
+                  type="text"
+                  value={settings.border_color}
+                  onChange={e => setSettings(prev => ({ ...prev, border_color: e.target.value }))}
+                  className="flex-1 px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={loading}
@@ -378,7 +511,6 @@ export default function ThemePanel() {
           </form>
         </div>
 
-        {/* Preview */}
         <div className="space-y-6">
           <div className="bg-card rounded-lg shadow p-6">
             <h3 className="text-lg font-medium mb-4">Aperçu</h3>
@@ -388,6 +520,15 @@ export default function ThemePanel() {
                 <h4 className="text-sm font-medium text-text-secondary mb-2">En-tête</h4>
                 <div className="bg-card border border-border rounded-lg p-4">
                   <div className="flex items-center gap-2">
+                    {settings.header_icon && (
+                      <div className="text-primary">
+                        {(() => {
+                          const iconOption = AVAILABLE_ICONS.find(icon => icon.name === settings.header_icon);
+                          const Icon = iconOption?.icon;
+                          return Icon ? <Icon size={24} /> : null;
+                        })()}
+                      </div>
+                    )}
                     <div className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                       {settings.site_title}
                     </div>
